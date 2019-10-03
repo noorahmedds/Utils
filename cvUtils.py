@@ -5,6 +5,35 @@ from collections import namedtuple
 
 Point2D = namedtuple("Point2D", "x y")
 
+def find_dominant_color(img, verbose = False):
+    """Finds Dominant color from an image. Returns palette and the dominant RGB value for that image"""
+
+    # Average
+    # average = img.mean(axis=0).mean(axis=0)
+
+    pixels = np.float32(img.reshape(-1, 3))
+    n_colors = 5
+    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 500, .05) #the final param is epsilon. It is the minimum amount the centroid has to move before the update is terminated
+    flags = cv.KMEANS_RANDOM_CENTERS
+
+    # Using kmeans to determine n_colors centroids from the complete set of pixel values
+    _, labels, palette = cv.kmeans(pixels, n_colors, None, criteria, 10, flags)
+    _, counts = np.unique(labels, return_counts=True)
+    dominant = np.int0(palette[np.argmax(counts)])
+    
+    if verbose:
+        print("Palette: ", palette)
+        print("Labels: ", labels)
+        print("Labels length: ", len(labels))
+        print("Counts: ", counts)
+        print("Dominant: ", dominant)
+
+    # display_color(counts, img, palette)
+    # Swapping R channel with B
+    dominant = dominant[::-1]
+    
+    return [palette], [dominant]
+
 def imshow2(im_name, image, location = [0, 0], resize = Point2D(x=350, y=600)):
     """
     Shows the image in the upper left side (by default) of the screen while using the cv2.imshow functionality
