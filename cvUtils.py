@@ -2,6 +2,9 @@ import cv2 as cv
 import numpy as np
 import imutils
 from collections import namedtuple
+import face_recognition
+from imutils import face_utils
+import dlib
 
 Point2D = namedtuple("Point2D", "x y")
 
@@ -85,7 +88,7 @@ def waitAfterShow(key='q', verbose=False):
 def processFrame(image):
     return imutils.auto_canny(image)
 
-def streamProcessedVideo(videoPath, processFrame, willProcess = True):
+def streamProcessedVideo(videoPath, processFrame, willProcess = True, showFPS = True):
     """
     The function will show a processed stream of a video
     
@@ -95,16 +98,25 @@ def streamProcessedVideo(videoPath, processFrame, willProcess = True):
         This function has to process a gray image e.g. Convert frame to canny, blur a frame etc
     willProcess : Bool
         This dictates whether the processing will be done
+    showFPS: Bool
+        Toggles FPS printing
 
     Returns
     -------
     null : void
     """
-    cap = cv2.VideoCapture(videoPath)
+    cap = cv.VideoCapture(videoPath)
+
+
+    # FPS
+    if showFPS:
+        fps = 0
+        start = time.time()
+        i = 0.0
 
     while(cap.isOpened()):
         ret, frame = cap.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
         # Processing occurs here
         if willProcess:
@@ -113,14 +125,25 @@ def streamProcessedVideo(videoPath, processFrame, willProcess = True):
             out = gray
 
         imshow2('frame',out)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
+        # FPS
+        if showFPS:
+            i+=1.0
+            if i > 10:
+                end = time.time()
+                seconds = end-start
+                fps = i/seconds
+                i = 0
+                print("{0} fps".format(fps))
+                start = end
+
     cap.release()
-    cv2.destroyAllWindows()
+    cv.destroyAllWindows()
 
 
-def streamProcessedWebcam(processFrame, willProcess = True):
+def streamProcessedWebcam(processFrame, willProcess = True, showFPS = True):
     """
     The function will show a processed stream of the webcam capture
     
@@ -130,6 +153,8 @@ def streamProcessedWebcam(processFrame, willProcess = True):
         This function has to process a gray image e.g. Convert frame to canny, blur a frame etc
     willProcess : Bool
         This dictates whether the processing will be done
+    showFPS: Bool
+        Toggles FPS printing
 
     Returns
     -------
@@ -137,6 +162,12 @@ def streamProcessedWebcam(processFrame, willProcess = True):
     """
 
     cap = cv.VideoCapture(0)
+
+    # FPS
+    if showFPS:
+        fps = 0
+        start = time.time()
+        i = 0.0
 
     while(True):
         ret, frame = cap.read()
@@ -153,6 +184,17 @@ def streamProcessedWebcam(processFrame, willProcess = True):
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
+        # FPS
+        if showFPS:
+            i+=1.0
+            if i > 10:
+                end = time.time()
+                seconds = end-start
+                fps = i/seconds
+                i = 0
+                print("{0} fps".format(fps))
+                start = end
+
     # When everything done, release the capture
     cap.release()
     cv.destroyAllWindows()
@@ -163,29 +205,29 @@ if __name__ == "__main__":
     This main is only for testing purposed and not part of the utilities
     """
 
-    im_path = "images/can.jpeg"
-    color = cv.imread(im_path)
-    gray = cv.cvtColor(color, cv.COLOR_RGB2GRAY)
-    cannyMap = imutils.auto_canny(gray)
-    cannyMap_t = imutils.translate(cannyMap, 10, 10)
-    cannyMap_transpose = np.transpose(cannyMap)
-    # imshow2("Canny", cannyMap_transpose)
-    rot = []
-    rot.append(cv.cvtColor(gray, cv.COLOR_GRAY2RGB))
-    # rot.append(cannyMap)
-    for angle in range(0, 360, 90):
-        # rotate the image and display it
-        rotated = imutils.rotate(gray, angle=angle)
-        rot.append(cv.cvtColor(rotated, cv.COLOR_GRAY2RGB))
-        # cv.imshow("Angle=%d" % (angle), rotated)
+    # im_path = "images/can.jpeg"
+    # color = cv.imread(im_path)
+    # gray = cv.cvtColor(color, cv.COLOR_RGB2GRAY)
+    # cannyMap = imutils.auto_canny(gray)
+    # cannyMap_t = imutils.translate(cannyMap, 10, 10)
+    # cannyMap_transpose = np.transpose(cannyMap)
+    # # imshow2("Canny", cannyMap_transpose)
+    # rot = []
+    # rot.append(cv.cvtColor(gray, cv.COLOR_GRAY2RGB))
+    # # rot.append(cannyMap)
+    # for angle in range(0, 360, 90):
+    #     # rotate the image and display it
+    #     rotated = imutils.rotate(gray, angle=angle)
+    #     rot.append(cv.cvtColor(rotated, cv.COLOR_GRAY2RGB))
+    #     # cv.imshow("Angle=%d" % (angle), rotated)
     
-    # Refer to https://pyformat.info for formatting
-    print("Showing file {0}, {1:.5}".format(1, im_path))
+    # # Refer to https://pyformat.info for formatting
+    # print("Showing file {0}, {1:.5}".format(1, im_path))
     
-    mont = imutils.build_montages(rot, (200, 200), (5, 1))
-    for m, i in zip(mont, range(0, len(mont))):
-        cv.imshow("Montage %i" % i, mont[i])
+    # mont = imutils.build_montages(rot, (200, 200), (5, 1))
+    # for m, i in zip(mont, range(0, len(mont))):
+    #     cv.imshow("Montage %i" % i, mont[i])
     
-    waitAfterShow()
+    # waitAfterShow()
 
     streamProcessedWebcam(processFrame)
