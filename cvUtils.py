@@ -5,6 +5,7 @@ from collections import namedtuple
 import face_recognition
 from imutils import face_utils
 import dlib
+import time
 
 Point2D = namedtuple("Point2D", "x y")
 
@@ -110,9 +111,8 @@ def streamProcessedVideo(videoPath, processFrame, willProcess = True, showFPS = 
 
     # FPS
     if showFPS:
-        fps = 0
+        fps = 0.0
         start = time.time()
-        i = 0.0
 
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -130,14 +130,12 @@ def streamProcessedVideo(videoPath, processFrame, willProcess = True, showFPS = 
 
         # FPS
         if showFPS:
-            i+=1.0
-            if i > 10:
-                end = time.time()
-                seconds = end-start
-                fps = i/seconds
-                i = 0
-                print("{0} fps".format(fps))
-                start = end
+            end = time.time()
+            seconds = end-start
+            fps = (fps + (1/seconds))/2
+            cv2.putText(out, "{0} fps".format(fps), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+            print("{0} fps".format(fps))
+            start = end
 
     cap.release()
     cv.destroyAllWindows()
@@ -165,9 +163,8 @@ def streamProcessedWebcam(processFrame, willProcess = True, showFPS = True):
 
     # FPS
     if showFPS:
-        fps = 0
+        fps = 0.0
         start = time.time()
-        i = 0.0
 
     while(True):
         ret, frame = cap.read()
@@ -186,14 +183,12 @@ def streamProcessedWebcam(processFrame, willProcess = True, showFPS = True):
 
         # FPS
         if showFPS:
-            i+=1.0
-            if i > 10:
-                end = time.time()
-                seconds = end-start
-                fps = i/seconds
-                i = 0
-                print("{0} fps".format(fps))
-                start = end
+            end = time.time()
+            seconds = end-start
+            fps = (fps + (1/seconds))/2
+            cv2.putText(out, "{0} fps".format(fps), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+            print("{0} fps".format(fps))
+            start = end
 
     # When everything done, release the capture
     cap.release()
