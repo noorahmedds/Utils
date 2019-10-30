@@ -359,6 +359,169 @@ def est_pose(im, bbox):
 
     return im, frontal
 
+# ================= Utilitiy functions
+def get_size(obj, seen=None):
+    """Recursively finds size of a python object
+    N.B: If the object has several references to other objects then this may significantly slow down processing as time progresses
+    """
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
+
+
+def prepare_output_for_tracking(yolo_output, img_shape):
+    # Returns a list of predictions [xcycwh] for each bounding box
+
+    processed_bbox = []
+    processed_conf = []
+    for bbox in yolo_output:
+        if (bbox[-1] is not None):
+            proc_box = xcycwh(bbox, img_shape)
+
+            if not(proc_box[2] == 0 and proc_box[3] == 0):
+                processed_bbox.append(proc_box)
+                processed_conf.append([bbox[5]])
+
+    return np.array(processed_bbox), np.array(processed_conf)
+
+
+def xcycwh(bb, img_shape):
+    img_height, img_width = img_shape[:-1]
+
+    x1 = bb[1]
+    y1 = bb[2]
+
+    x2 = bb[3]
+    y2 = bb[4]
+
+    x1 = clamp(x1, [0, img_width])
+    x2 = clamp(x2, [0, img_width])
+    y1 = clamp(y1, [0, img_height])
+    y2 = clamp(y2, [0, img_height])
+
+    xc = x1 + (x2-x1)/2
+    yc = y1 + (y2-y1)/2
+
+    w = x2-x1
+    h = y2-y1
+
+    return np.array([xc, yc, w, h])
+
+
+def clamp(value, between):
+    """
+    Clamp a value between a range
+    
+    Parameters
+    ----------
+    value: an integer/float to be clamped
+    between: 1-D Array or Tuple with length 2
+
+    Returns
+    -------
+    clamped value
+    """
+    return max(between[0], min(value, between[1]))
+
+
+def doOverlap(boxA, boxB):
+    """
+    Checks if two boxes have any overlapping section
+
+    Parameters
+    ----------
+    boxA, boxB: Bounding box coordinated in the form (x1, y1, x2, y2)
+
+    Returns
+    -------
+    Bool Flag
+    """
+
+    if (boxA[0] > boxB[2] or boxB[0] > boxA[2]):
+        return False
+    if (boxA[1] > boxB[3] or boxB[1] > boxA[3]):
+        return False
+    return True
+
+
+def iou(boxA, boxB):
+    """
+    Returns the iou of two boxes
+    """
+    # boxA = boxB = [x1,y1,x2,y2]
+
+    # Determine the coordinates of the intersection rectangle
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    # Compute the area of intersection
+    intersection_area = (xB - xA + 1) * (yB - yA + 1)
+
+    # Compute the area of both rectangles
+    boxA_area = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+    boxB_area = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+    # Compute the IOU
+    iou = float(intersection_area) / float(boxA_area + boxB_area - intersection_area)
+    return iou
+
+def prep_image(img, inp_dim):
+    """
+    Prepare image for inputting to the neural network.
+    Returns a Variable
+    """
+    orig_im = img
+    dim = orig_im.shape[1], orig_im.shape[0]
+    img = cv2.resize(orig_im, (inp_dim, inp_dim))
+    img_ = img[:, :, :: -1].transpose((2, 0, 1)).copy()
+    img_ = torch.from_numpy(img_).float().div(255.0).unsqueeze(0)
+    return img_, orig_im, dim
+
+
+def prep_face(fa, img, rectangle):
+    """
+    Align face
+    fa is a faceAligner object from the imutils library
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    face_aligned = fa.align(img, gray, rectangle)
+    return np.copy(face_aligned)
+
+
+def prep_crop(bb_tensor, img):
+    # First lets make sure that x is in bounds
+    # Gets the top_left and bottom_right points from the tensor
+    # bb_tensor contains = [?, x, y, x1, y1]
+    x, y = (bb_tensor[1].int().item(), bb_tensor[2].int().item())
+    x1, y1 = (bb_tensor[3].int().item(), bb_tensor[4].int().item())
+
+    input_height = img.shape[0]
+    input_width = img.shape[1]
+
+    # Clamping values
+    x = clamp(x, (0, input_width))
+    x1 = clamp(x1, (0, input_width))
+    y = clamp(y, (0, input_height))
+    y1 = clamp(y1, (0, input_height))
+
+    # return np.copy(img[y:y1, x:x1, :])
+    return img[y:y1, x:x1, :]
 
 if __name__ == "__main__":
     """
