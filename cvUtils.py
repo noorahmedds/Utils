@@ -7,9 +7,15 @@ from imutils import face_utils
 import dlib
 import time
 import sys
+from PIL import Image
 
 Point2D = namedtuple("Point2D", "x y")
 
+def convert_numpy_to_pil(n_array, multiplier=1):
+	"""
+	Converts a numpy array to a PIL Image
+	"""
+	return Image.fromarray(np.uint8(n_array*multiplier))
 
 def clamp(value, between):
     """
