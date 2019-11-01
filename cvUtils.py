@@ -11,6 +11,10 @@ from PIL import Image
 
 Point2D = namedtuple("Point2D", "x y")
 
+def debug_print(expression):
+    frame = sys._getframe(1)
+    print(expression, '=', repr(eval(expression, frame.f_globals, frame.f_locals)))
+
 def convert_numpy_to_pil(n_array, multiplier=1):
 	"""
 	Converts a numpy array to a PIL Image
