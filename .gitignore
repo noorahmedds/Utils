@@ -1,2 +1,7 @@
 *.jpg
 *.xml
+/practices/BBRegressiong/training_images/
+/practices/KerasTut1/dogs-vs-cats/
+/practices/KerasTut1/bottleneck_features_train.npy
+/practices/KerasTut1/*.h5
+*.pb

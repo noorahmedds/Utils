@@ -9,15 +9,14 @@
 import numpy as np
 import csv
 import cv2
-from yoloface import infer
+# from yoloface import infer
 import tqdm
 import glob
 
-
 def process_bb(size, bb):
 
-    dw = 1./size[0]
-    dh = 1./size[1]
+	dh = 1./size[0]
+    dw = 1./size[1]
 
     x, y, w, h = bb
     x = int(x)
@@ -77,10 +76,9 @@ def main():
             if np.all(image == None):
                 continue
 
-            size = image.shape
-
             # The COCO bounding box format is [top left x position, top left y position, width, height].
             # Converting the bounding boxes to darkent format here
+            size = image.shape
             xc, yc, w, h = process_bb(size, row[1:-1])
             class_id = int(row[-1])
 
@@ -88,16 +86,16 @@ def main():
                 annot_dict[image_id] = [[class_id, xc, yc, w, h]]
                 line_count += 1
 
-                # Running yolo on the current image
-                # Saving annotations in the dictionary
-                faces = infer(file_path)
-                faces_count += len(faces)
-                # left, top, width, height
+                # # Running yolo on the current image
+                # # Saving annotations in the dictionary
+                # faces = infer(file_path)
+                # faces_count += len(faces)
+                # # left, top, width, height
 
-                for face in faces:
-                    face_x, face_y, face_w, face_h = process_bb(size, face)
-                    face_ann = [1, face_x, face_y, face_w, face_h]
-                    annot_dict[image_id].append(face_ann)
+                # for face in faces:
+                #     face_x, face_y, face_w, face_h = process_bb(size, face)
+                #     face_ann = [1, face_x, face_y, face_w, face_h]
+                #     annot_dict[image_id].append(face_ann)
             else:
                 annot_dict[image_id].append([class_id, xc, yc, w, h])
             persons_count += 1
