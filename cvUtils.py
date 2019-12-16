@@ -11,6 +11,23 @@ from PIL import Image
 
 Point2D = namedtuple("Point2D", "x y")
 
+def draw_text_with_background(frame, text, origin,
+                                font=cv2.FONT_HERSHEY_SIMPLEX, scale=1.0,
+                                color=(0, 0, 0), thickness=1, bgcolor=(255, 255, 255)):
+    """
+        Credits: OpenVino Python Demos
+        Draws text with specified color background on the given frame
+    """
+    text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
+    cv2.rectangle(frame,
+                    tuple((origin + (0, baseline)).astype(int)),
+                    tuple((origin + (text_size[0], -text_size[1])).astype(int)),
+                    bgcolor, cv2.FILLED)
+    cv2.putText(frame, text,
+                tuple(origin.astype(int)),
+                font, scale, color, thickness)
+    return text_size, baseline
+
 def debug_print(expression):
     frame = sys._getframe(1)
     print(expression, '=', repr(eval(expression, frame.f_globals, frame.f_locals)))
@@ -29,6 +46,11 @@ def clamp(value, between):
 
 
 def doOverlap(boxA, boxB):
+    """
+    Checks is two boxes overlap
+    bbox format: x1,y1,x2,y2
+    """
+
     if (boxA[0] > boxB[2] or boxB[0] > boxA[2]):
         return False
     if (boxA[1] > boxB[3] or boxB[1] > boxA[3]):
@@ -37,7 +59,10 @@ def doOverlap(boxA, boxB):
 
 
 def get_size(obj, seen=None):
-    """Recursively finds size of objects"""
+    """
+    Recursively finds size of objects
+    """
+
     size = sys.getsizeof(obj)
     if seen is None:
         seen = set()
@@ -515,6 +540,11 @@ def prep_face(fa, img, rectangle):
 
 
 def prep_crop(bb_tensor, img):
+
+    """
+        Prepares crop for further processing
+    """
+
     # First lets make sure that x is in bounds
     # Gets the top_left and bottom_right points from the tensor
     # bb_tensor contains = [?, x, y, x1, y1]
@@ -563,4 +593,4 @@ if __name__ == "__main__":
 
     # waitAfterShow()
 
-    streamProcessedWebcam(processFrame)
+    # streamProcessedWebcam(processFrame)
