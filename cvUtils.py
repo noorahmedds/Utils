@@ -7,9 +7,18 @@ from imutils import face_utils
 import dlib
 import time
 import sys
-from PIL import Image
+from PIL import Image, ImageGrab
 
 Point2D = namedtuple("Point2D", "x y")
+
+def grab_screen(shape = (1080,2560,3)):
+    """
+        Grab a screenshot of your screen
+    """
+    printscreen_pil =  ImageGrab.grab()
+    printscreen_numpy =   np.array(printscreen_pil,dtype=np.uint8).reshape(shape)
+    image = printscreen_numpy
+    return image
 
 def draw_text_with_background(frame, text, origin,
                                 font=cv2.FONT_HERSHEY_SIMPLEX, scale=1.0,
